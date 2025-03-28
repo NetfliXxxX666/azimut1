@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Management System PRO</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="auth-screen" class="auth-container">
+        <h1>Авторизация</h1>
+        <div class="form-group">
+            <label for="login-username">Логин</label>
+            <input type="text" id="login-username" placeholder="Введите ваш логин">
+        </div>
+        <div class="form-group">
+            <label for="login-password">Пароль</label>
+            <input type="password" id="login-password" placeholder="Введите ваш пароль">
+        </div>
+        <button onclick="login()" class="success">Войти</button>
+        <button onclick="showRegisterForm()" class="secondary">Регистрация</button>
+    </div>
+
+    <div id="register-screen" class="auth-container hidden">
+        <h1>Регистрация</h1>
+        <div class="form-group">
+            <label for="reg-username">Логин</label>
+            <input type="text" id="reg-username" placeholder="Придумайте логин">
+        </div>
+        <div class="form-group">
+            <label for="reg-password">Пароль</label>
+            <input type="password" id="reg-password" placeholder="Придумайте пароль">
+        </div>
+        <div class="form-group">
+            <label for="reg-fullname">ФИО</label>
+            <input type="text" id="reg-fullname" placeholder="Ваше полное имя">
+        </div>
+        <div class="form-group">
+            <label for="reg-role">Роль</label>
+            <select id="reg-role">
+                <option value="staff">Сотрудник</option>
+                <option value="manager">Менеджер</option>
+                <option value="admin">Администратор</option>
+            </select>
+        </div>
+        <button onclick="register()" class="success">Зарегистрироваться</button>
+        <button onclick="hideRegisterForm()" class="secondary">Отмена</button>
+    </div>
+
+    <div id="app-container" class="container hidden">
+        <div class="user-info">
+            <span id="current-user-name"></span>
+            <span id="current-user-role" class="role-badge"></span>
+            <button class="logout-btn" onclick="logout()">Выйти</button>
+        </div>
+
+        <h1>Система управления отелем <span id="hotel-name"></span></h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="openTab('dashboard')">Дашборд</div>
+            <div class="tab" onclick="openTab('guests')">Гости</div>
+            <div class="tab" onclick="openTab('rooms')">Номера</div>
+            <div class="tab" onclick="openTab('bookings')">Бронирования</div>
+            <div class="tab" onclick="openTab('staff')">Персонал</div>
+            <div class="tab" onclick="openTab('services')">Услуги</div>
+            <div class="tab" onclick="openTab('reports')">Отчеты</div>
+            <div class="tab" onclick="openTab('settings')" id="settings-tab">Настройки</div>
+        </div>
+        
+        <div id="dashboard" class="tab-content active">
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Гости сегодня</h3>
+                    <div class="value" id="today-guests">0</div>
+                    <div>+5% с прошлой недели</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Занято номеров</h3>
+                    <div class="value" id="occupied-rooms">0/0</div>
+                    <div>Загрузка: 0%</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Доход сегодня</h3>
+                    <div class="value" id="today-revenue">0 ₽</div>
+                    <div>+12% с прошлой недели</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Средний рейтинг</h3>
+                    <div class="value" id="avg-rating">0.0</div>
+                    <div>из 5 звезд</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h2>Последние бронирования</h2>
+                    <table id="recent-bookings">
+                        <thead>
+                            <tr>
+                                <th>Гость</th>
+                                <th>Номер</th>
+                                <th>Даты</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h2>Статус номеров</h2>
+                    <div class="chart-container" id="room-status-chart">
+                        <canvas id="roomChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Предстоящие выезды</h2>
+                    <table id="upcoming-checkouts">
+                        <thead>
+                            <tr>
+                                <th>Гость</th>
+                                <th>Номер</th>
+                                <th>Выезд</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h2>Запросы обслуживания</h2>
+                    <table id="service-requests">
+                        <thead>
+                            <tr>
+                                <th>Номер</th>
+                                <th>Услуга</th>
+                                <th>Время</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div id="guests" class="tab-content">
+            <div class="search">
+                <input type="text" id="guestSearch" placeholder="Поиск гостей..." onkeyup="searchGuests()">
+                <button onclick="showAddGuestModal()">Добавить гостя</button>
+                <button onclick="exportGuestsToPDF()" class="secondary">Экспорт в PDF</button>
+            </div>
+            
+            <table id="guestsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ФИО</th>
+                        <th>Телефон</th>
+                        <th>Email</th>
+                        <th>Номер</th>
+                        <th>Дата заезда</th>
+                        <th>Дата выезда</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="guestsList"></tbody>
+            </table>
+        </div>
+        
+        <div id="rooms" class="tab-content">
+            <div class="search">
+                <input type="text" id="roomSearch" placeholder="Поиск номеров..." onkeyup="searchRooms()">
+                <button onclick="showAddRoomModal()" id="add-room-btn">Добавить номер</button>
+                <button onclick="showRoomTypesModal()" class="secondary">Типы номеров</button>
+            </div>
+            
+            <table id="roomsTable">
+                <thead>
+                    <tr>
+                        <th>Номер</th>
+                        <th>Тип</th>
+                        <th>Этаж</th>
+                        <th>Статус</th>
+                        <th>Цена</th>
+                        <th>Вместимость</th>
+                        <th>Особенности</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="roomsList"></tbody>
+            </table>
+        </div>
+        
+        <div id="bookings" class="tab-content">
+            <div class="search">
+                <input type="text" id="bookingSearch" placeholder="Поиск бронирований..." onkeyup="searchBookings()">
+                <button onclick="showAddBookingModal()">Новое бронирование</button>
+                <button onclick="showCalendarView()" class="secondary">Календарь</button>
+            </div>
+            
+            <table id="bookingsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Гость</th>
+                        <th>Номер</th>
+                        <th>Даты</th>
+                        <th>Стоимость</th>
+                        <th>Статус</th>
+                        <th>Создано</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsList"></tbody>
+            </table>
+        </div>
+        
+        <div id="staff" class="tab-content">
+            <div class="search">
+                <input type="text" id="staffSearch" placeholder="Поиск сотрудников..." onkeyup="searchStaff()">
+                <button onclick="showAddStaffModal()" id="add-staff-btn">Добавить сотрудника</button>
+                <button onclick="showScheduleModal()" class="secondary">График работы</button>
+            </div>
+            
+            <table id="staffTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ФИО</th>
+                        <th>Должность</th>
+                        <th>Роль</th>
+                        <th>Контакты</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="staffList"></tbody>
+            </table>
+        </div>
+        
+        <div id="services" class="tab-content">
+            <div class="search">
+                <input type="text" id="serviceSearch" placeholder="Поиск услуг..." onkeyup="searchServices()">
+                <button onclick="showAddServiceModal()" id="add-service-btn">Добавить услугу</button>
+                <button onclick="showServiceCategoriesModal()" class="secondary">Категории</button>
+            </div>
+            
+            <table id="servicesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Услуга</th>
+                        <th>Категория</th>
+                        <th>Цена</th>
+                        <th>Длительность</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="servicesList"></tbody>
+            </table>
+        </div>
+        
+        <div id="reports" class="tab-content">
+            <div class="card">
+                <h2>Генерация отчетов</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="report-type">Тип отчета</label>
+                        <select id="report-type">
+                            <option value="occupancy">Загрузка номеров</option>
+                            <option value="revenue">Доходы</option>
+                            <option value="guests">Гости</option>
+                            <option value="services">Услуги</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="report-period">Период</label>
+                        <select id="report-period">
+                            <option value="today">Сегодня</option>
+                            <option value="week">Неделя</option>
+                            <option value="month">Месяц</option>
+                            <option value="quarter">Квартал</option>
+                            <option value="year">Год</option>
+                            <option value="custom">Выбрать даты</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" id="custom-dates" style="display: none;">
+                    <div class="form-group">
+                        <label for="start-date">Начальная дата</label>
+                        <input type="date" id="start-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="end-date">Конечная дата</label>
+                        <input type="date" id="end-date">
+                    </div>
+                </div>
+                <button onclick="generateReport()" class="success">Сформировать отчет</button>
+                <button onclick="exportReportToPDF()" class="secondary">Экспорт в PDF</button>
+            </div>
+            
+            <div class="card" id="report-results" style="display: none;">
+                <h2>Результаты отчета</h2>
+                <div id="report-content"></div>
+            </div>
+        </div>
+        
+        <div id="settings" class="tab-content">
+            <div class="card">
+                <h2>Настройки отеля</h2>
+                <div class="form-group">
+                    <label for="hotel-name-input">Название отеля</label>
+                    <input type="text" id="hotel-name-input" placeholder="Введите название отеля">
+                </div>
+                <div class="form-group">
+                    <label for="hotel-address">Адрес</label>
+                    <input type="text" id="hotel-address" placeholder="Введите адрес отеля">
+                </div>
+                <div class="form-group">
+                    <label for="hotel-phone">Телефон</label>
+                    <input type="text" id="hotel-phone" placeholder="Введите телефон отеля">
+                </div>
+                <div class="form-group">
+                    <label for="hotel-email">Email</label>
+                    <input type="email" id="hotel-email" placeholder="Введите email отеля">
+                </div>
+                <button onclick="saveHotelSettings()" class="success">Сохранить</button>
+            </div>
+            
+            <div class="card" id="user-settings">
+                <h2>Личные настройки</h2>
+                <div class="form-group">
+                    <label for="user-fullname">ФИО</label>
+                    <input type="text" id="user-fullname" placeholder="Ваше полное имя">
+                </div>
+                <div class="form-group">
+                    <label for="user-email">Email</label>
+                    <input type="email" id="user-email" placeholder="Ваш email">
+                </div>
+                <div class="form-group">
+                    <label for="user-phone">Телефон</label>
+                    <input type="text" id="user-phone" placeholder="Ваш телефон">
+                </div>
+                <button onclick="saveUserSettings()" class="success">Сохранить</button>
+                <button onclick="showChangePasswordModal()" class="secondary">Изменить пароль</button>
+            </div>
+            
+            <div class="card" id="system-settings">
+                <h2>Системные настройки</h2>
+                <div class="form-group">
+                    <label for="backup-frequency">Частота резервного копирования</label>
+                    <select id="backup-frequency">
+                        <option value="daily">Ежедневно</option>
+                        <option value="weekly">Еженедельно</option>
+                        <option value="monthly">Ежемесячно</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="invoice-prefix">Префикс для счетов</label>
+                    <input type="text" id="invoice-prefix" placeholder="INV-">
+                </div>
+                <button onclick="saveSystemSettings()" class="success">Сохранить</button>
+                <button onclick="createBackup()" class="secondary">Создать резервную копию</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="addGuestModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('addGuestModal')">&times;</span>
+            <h2>Добавить гостя</h2>
+            <div class="form-group">
+                <label for="guest-name">ФИО</label>
+                <input type="text" id="guest-name" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="guest-phone">Телефон</label>
+                    <input type="text" id="guest-phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="guest-email">Email</label>
+                    <input type="email" id="guest-email">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="guest-passport">Паспорт</label>
+                    <input type="text" id="guest-passport" required>
+                </div>
+                <div class="form-group">
+                    <label for="guest-country">Страна</label>
+                    <input type="text" id="guest-country" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="guest-notes">Примечания</label>
+                <textarea id="guest-notes" rows="3"></textarea>
+            </div>
+            <button onclick="addGuest()" class="success">Сохранить</button>
+            <button onclick="closeModal('addGuestModal')" class="secondary">Отмена</button>
+        </div>
+    </div>
+
+    <div id="editGuestModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('editGuestModal')">&times;</span>
+            <h2>Редактировать гостя</h2>
+            <input type="hidden" id="edit-guest-id">
+            <div class="form-group">
+                <label for="edit-guest-name">ФИО</label>
+                <input type="text" id="edit-guest-name" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="edit-guest-phone">Телефон</label>
+                    <input type="text" id="edit-guest-phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-guest-email">Email</label>
+                    <input type="email" id="edit-guest-email">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="edit-guest-passport">Паспорт</label>
+                    <input type="text" id="edit-guest-passport" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-guest-country">Страна</label>
+                    <input type="text" id="edit-guest-country" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="edit-guest-notes">Примечания</label>
+                <textarea id="edit-guest-notes" rows="3"></textarea>
+            </div>
+            <button onclick="updateGuest()" class="success">Сохранить</button>
+            <button onclick="closeModal('editGuestModal')" class="secondary">Отмена</button>
+        </div>
+    </div>
+
+    <div id="addRoomModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('addRoomModal')">&times;</span>
+            <h2>Добавить номер</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="room-number">Номер</label>
+                    <input type="text" id="room-number" required>
+                </div>
+                <div class="form-group">
+                    <label for="room-type">Тип номера</label>
+                    <select id="room-type" required>
+                        <!-- Заполняется через JS -->
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="room-floor">Этаж</label>
+                    <input type="number" id="room-floor" min="1" max="20" required>
+                </div>
+                <div class="form-group">
+                    <label for="room-status">Статус</label>
+                    <select id="room-status" required>
+                        <option value="available">Свободен</option>
+                        <option value="occupied">Занят</option>
+                        <option value="maintenance">На обслуживании</option>
+                        <option value="reserved">Забронирован</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="room-features">Особенности</label>
+                <textarea id="room-features" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="room-notes">Примечания</label>
+                <textarea id="room-notes" rows="2"></textarea>
+            </div>
+            <button onclick="saveRoom()" class="success">Сохранить</button>
+            <button onclick="closeModal('addRoomModal')" class="secondary">Отмена</button>
+        </div>
+    </div>
+
+    <div id="roomTypesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('roomTypesModal')">&times;</span>
+            <h2>Типы номеров</h2>
+            <button onclick="showAddRoomTypeModal()" style="margin-bottom: 20px;">Добавить тип</button>
+            <table id="roomTypesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Цена</th>
+                        <th>Вместимость</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="roomTypesList">
+                    <!-- Заполняется через JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="addRoomTypeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('addRoomTypeModal')">&times;</span>
+            <h2>Добавить тип номера</h2>
+            <div class="form-group">
+                <label for="room-type-name">Название</label>
+                <input type="text" id="room-type-name" required>
+            </div>
+            <div class="form-group">
+                <label for="room-type-desc">Описание</label>
+                <textarea id="room-type-desc" rows="3" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="room-type-price">Цена за ночь</label>
+                    <input type="number" id="room-type-price" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="room-type-capacity">Вместимость</label>
+                    <input type="number" id="room-type-capacity" min="1" max="10" required>
+                </div>
+            </div>
+            <button onclick="saveRoomType()" class="success">Сохранить</button>
+            <button onclick="closeModal('addRoomTypeModal')" class="secondary">Отмена</button>
+        </div>
+    </div>
+    
+    <script src="js/database.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/guests.js"></script>
+    <script src="js/rooms.js"></script>
+    <script src="js/bookings.js"></script>
+    <script src="js/staff.js"></script>
+    <script src="js/services.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
